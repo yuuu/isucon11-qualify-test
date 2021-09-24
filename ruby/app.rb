@@ -5,9 +5,12 @@ require 'sinatra/base'
 require 'uri'
 require 'mysql2'
 require 'mysql2-cs-bind'
+require 'estackprof'
 
 module Isucondition
   class App < Sinatra::Base
+    use Estackprof::Middleware
+
     configure :development do
       require 'sinatra/reloader'
       register Sinatra::Reloader
