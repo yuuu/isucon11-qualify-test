@@ -6,7 +6,7 @@ restart: ## Copy configs from repository to conf
 	@make -s ruby-restart
 
 ruby-log: ## Log Server
-	@sudo journalctl -u isucondition.ruby.service
+	@sudo journalctl -f -u isucondition.ruby.service
 
 ruby-restart: ## Restart Server
 	@rm ruby/tmp/*.dump
@@ -29,7 +29,13 @@ nginx-error-log: ## Tail nginx error.log
 	@sudo tail -f /var/log/nginx/error.log
 
 alp: ## Run alp
-	@sudo cat /var/log/nginx/access.log | alp ltsv -m '/api/condition/[a-z0-9-]+, /api/isu/[a-z0-9-]+/icon, /api/isu/[a-z0-9-]+/graph, /api/isu/[a-z0-9-]+, /isu/[a-z0-9-]+, /assets/[a-z0-9-]+' -f 'Time >= TimeAgo("5m")'
+	@sudo cat /var/log/nginx/access.log | alp ltsv -m '/api/condition/[a-z0-9-]+, /api/isu/[a-z0-9-]+/icon, /api/isu/[a-z0-9-]+/graph, /api/isu/[a-z0-9-]+, /isu/[a-z0-9-]+, /assets/[a-z0-9-]+'
+
+estackprof-top: ## Report by estackprof top
+	@cd ruby && bundle exec estackprof top -p app.rb
+
+estackprof-list: ## Report by estackprof list
+	@cd ruby && bundle exec estackprof list -f app.rb
 
 db-restart: ## Restart mysql
 	@sudo cp -a mysql/* /etc/mysql/
