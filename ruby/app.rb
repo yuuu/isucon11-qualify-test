@@ -6,6 +6,7 @@ require 'uri'
 require 'mysql2'
 require 'mysql2-cs-bind'
 require 'estackprof'
+require_relative './sidekiq'
 
 module Isucondition
   class App < Sinatra::Base
@@ -618,13 +619,6 @@ module Isucondition
 
     # ISUからのコンディションを受け取る
     post '/api/condition/:jia_isu_uuid' do
-      # TODO: 一定割合リクエストを落としてしのぐようにしたが、本来は全量さばけるようにすべき
-      drop_probability = 0.0
-      if rand <= drop_probability
-        request.env['rack.logger'].warn 'drop post isu condition request'
-        halt_error 202, ''
-      end
-
       jia_isu_uuid = params[:jia_isu_uuid]
       halt_error 400, 'missing: jia_isu_uuid' if !jia_isu_uuid || jia_isu_uuid.empty?
 
@@ -636,22 +630,7 @@ module Isucondition
       halt_error 400, 'bad request body' unless json_params.kind_of?(Array)
       halt_error 400, 'bad request body' if json_params.empty?
 
-      db_transaction do
-        count = db.xquery('SELECT COUNT(*) AS `cnt` FROM `isu` WHERE `jia_isu_uuid` = ?', jia_isu_uuid).first
-        halt_error 404, 'not found: isu' if count.fetch(:cnt).zero?
-
-        values = json_params.map do |cond|
-          halt_error 400, 'bad request body' unless valid_condition_format?(cond.fetch(:condition))
-          timestamp = Time.at(cond.fetch(:timestamp))
-          level = calculate_condition_level(cond.fetch(:condition))
-          [jia_isu_uuid, timestamp, cond.fetch(:is_sitting), cond.fetch(:condition), cond.fetch(:message), level]
-        end
-
-        db.xquery(
-          "INSERT INTO `isu_condition` (`jia_isu_uuid`, `timestamp`, `is_sitting`, `condition`, `message`, `level`) VALUES #{(["(?, ?, ?, ?, ?, ?)"] * values.length).join(',')}",
-          values.flatten
-        )
-      end
+      PostConditionWorker.perform_async(jia_isu_uuid, json_params)
 
       status 202
       ''

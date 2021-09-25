@@ -6,6 +6,7 @@ gem 'mysql2'
 gem 'mysql2-cs-bind'
 gem 'jwt'
 gem 'estackprof'
+gem 'sidekiq'
 
 
 group :development do

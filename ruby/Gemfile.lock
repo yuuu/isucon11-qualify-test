@@ -3,6 +3,7 @@ GEM
   specs:
     addressable (2.8.0)
       public_suffix (>= 2.0.2, < 5.0)
+    connection_pool (2.2.5)
     estackprof (0.1.1)
       launchy
       stackprof (~> 0.2)
@@ -23,7 +24,12 @@ GEM
     rack (2.2.3)
     rack-protection (2.1.0)
       rack
+    redis (4.4.0)
     ruby2_keywords (0.0.5)
+    sidekiq (6.2.2)
+      connection_pool (>= 2.2.2)
+      rack (~> 2.0)
+      redis (>= 4.2.0)
     sinatra (2.1.0)
       mustermann (~> 1.0)
       rack (~> 2.2)
@@ -48,6 +54,7 @@ DEPENDENCIES
   mysql2
   mysql2-cs-bind
   puma
+  sidekiq
   sinatra
   sinatra-contrib
 
