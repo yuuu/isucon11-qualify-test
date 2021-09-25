@@ -9,6 +9,7 @@ ruby-log: ## Log Server
 	@sudo journalctl -f -u isucondition.ruby.service
 
 ruby-restart: ## Restart Server
+	@touch ruby/tmp/test.dump
 	@rm ruby/tmp/*.dump
 	@sudo systemctl daemon-reload
 	@cd ruby && bundle 1> /dev/null

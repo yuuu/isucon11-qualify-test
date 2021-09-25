@@ -545,13 +545,13 @@ module Isucondition
     def get_isu_conditions_from_db(jia_isu_uuid, end_time, condition_level, start_time, limit, isu_name)
       conditions = if start_time.to_i == 0
         db.xquery(
-          'SELECT * FROM `isu_condition` WHERE `jia_isu_uuid` = ? AND `timestamp` < ? ORDER BY `timestamp` DESC',
+          "SELECT * FROM `isu_condition` WHERE `jia_isu_uuid` = ? AND `timestamp` < ? AND `level` IN (#{condition_level.map { |c| "\'#{c}\'"}.join(', ')}) ORDER BY `timestamp` DESC LIMIT #{limit}",
           jia_isu_uuid,
           end_time,
         )
       else
         db.xquery(
-          'SELECT * FROM `isu_condition` WHERE `jia_isu_uuid` = ? AND `timestamp` < ? AND ? <= `timestamp` ORDER BY `timestamp` DESC',
+          "SELECT * FROM `isu_condition` WHERE `jia_isu_uuid` = ? AND `timestamp` < ? AND ? <= `timestamp` AND `level` IN (#{condition_level.map { |c| "\'#{c}\'"}.join(', ')}) ORDER BY `timestamp` DESC LIMIT #{limit}",
           jia_isu_uuid,
           end_time,
           start_time,
@@ -559,23 +559,17 @@ module Isucondition
       end
 
       conditions_response = conditions.map do |c|
-        c_level = calculate_condition_level(c.fetch(:condition))
-        if condition_level.include?(c_level)
-          {
-            jia_isu_uuid: c.fetch(:jia_isu_uuid),
-            isu_name: isu_name,
-            timestamp: c.fetch(:timestamp).to_i,
-            is_sitting: c.fetch(:is_sitting),
-            condition: c.fetch(:condition),
-            condition_level: c_level,
-            message: c.fetch(:message),
-          }
-        else
-          nil
-        end
-      end.compact
+        {
+          jia_isu_uuid: c.fetch(:jia_isu_uuid),
+          isu_name: isu_name,
+          timestamp: c.fetch(:timestamp).to_i,
+          is_sitting: c.fetch(:is_sitting),
+          condition: c.fetch(:condition),
+          condition_level:  c.fetch(:level),
+          message: c.fetch(:message),
+        }
+      end
 
-      conditions_response = conditions_response[0, limit] if conditions_response.size > limit
       conditions_response
     end
 
@@ -649,11 +643,12 @@ module Isucondition
         values = json_params.map do |cond|
           halt_error 400, 'bad request body' unless valid_condition_format?(cond.fetch(:condition))
           timestamp = Time.at(cond.fetch(:timestamp))
-          [jia_isu_uuid, timestamp, cond.fetch(:is_sitting), cond.fetch(:condition), cond.fetch(:message)]
+          level = calculate_condition_level(cond.fetch(:condition))
+          [jia_isu_uuid, timestamp, cond.fetch(:is_sitting), cond.fetch(:condition), cond.fetch(:message), level]
         end
 
         db.xquery(
-          "INSERT INTO `isu_condition` (`jia_isu_uuid`, `timestamp`, `is_sitting`, `condition`, `message`) VALUES #{(["(?, ?, ?, ?, ?)"] * values.length).join(',')}",
+          "INSERT INTO `isu_condition` (`jia_isu_uuid`, `timestamp`, `is_sitting`, `condition`, `message`, `level`) VALUES #{(["(?, ?, ?, ?, ?, ?)"] * values.length).join(',')}",
           values.flatten
         )
       end
