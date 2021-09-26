@@ -44,8 +44,11 @@ bind-address            = 0.0.0.0
 #
 # * Query Cache Configuration
 #
-#query_cache_limit      = 1M
-query_cache_size        = 16M
+query_cache_limit       = 16M
+query_cache_size        = 512M
+query_cache_type        = 1
+innodb_file_per_table   = ON
+innodb_buffer_pool_size = 2048M
 
 #
 # * Logging and Replication
