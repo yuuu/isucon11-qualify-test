@@ -10,6 +10,7 @@ require 'estackprof'
 module Isucondition
   class App < Sinatra::Base
     use Estackprof::Middleware
+    set :bind, '0.0.0.0'
 
     configure :development do
       require 'sinatra/reloader'
